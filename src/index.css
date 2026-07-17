@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Montserrat", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cinzel", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Override hardcoded dark-mode shades with deep corporate navy blue/sapphire shades */
+  --color-gray-950: #02040a;
+  --color-gray-900: #060d1f;
+  --color-gray-800: #0e172c;
+  --color-[#090b11]: #020617; /* Navy Canvas background */
+  --color-[#0e111a]: #070f22; /* Deep navy header */
+  --color-[#121622]: #0c152d; /* Navy card background */
+  --color-[#0f131f]: #050d24; /* Welcome banner gradient start */
+  --color-[#121829]: #142554; /* Welcome banner gradient end */
+  --color-[#141923]: #0a1329; /* Item card bg */
+  --color-[#111520]: #071026; /* Details container bg */
+  --color-[#0b0c12]: #01030a; /* Darkest footer */
+  --color-[#161d2b]: #162b5a; /* Selected file element */
+  --color-[#121621]: #0f1a36; /* Settings panel bg */
+
+  /* Map emerald classes directly to corporate Champagne Gold shades */
+  --color-emerald-500: #c4a470; /* Base Gold */
+  --color-emerald-600: #b6935c; /* Darker Gold for hover/active state */
+  --color-emerald-400: #dfba73; /* Light gold for highlights/badges */
+  --color-emerald-300: #ebd19c;
+  --color-emerald-200: #f4e3c2;
+  --color-emerald-100: #faefda;
+  --color-emerald-50:  #fffbf3;
+  --color-emerald-700: #987845; /* Darker Gold borders */
+  --color-emerald-800: #785d34;
+  --color-emerald-900: #574221;
+  --color-emerald-950: #0a1633; /* Deep navy blue background for gold contrast badges */
+
+  /* Custom brand variables for manual usage if needed */
+  --color-inverland-blue-deepest: #020617;
+  --color-inverland-blue-dark: #070f22;
+  --color-inverland-blue-medium: #0c152d;
+  --color-inverland-blue-light: #142554;
+  --color-inverland-gold: #c4a470;
+  --color-inverland-gold-light: #dfba73;
+}
+
+/* Custom premium classes */
+.font-cinzel {
+  font-family: 'Cinzel', Georgia, serif;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #ebd19c 50%, #c4a470 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-glow {
+  box-shadow: 0 0 20px rgba(196, 164, 112, 0.15);
+}
+
+.gold-border-glow {
+  border-color: rgba(196, 164, 112, 0.3) !important;
+  box-shadow: 0 0 15px rgba(196, 164, 112, 0.1);
+}

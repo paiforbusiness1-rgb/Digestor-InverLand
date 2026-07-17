@@ -1,0 +1,10 @@
+---
+description: HRU — Cero hardcoding, cero regresiones, universalidad total
+alwaysApply: true
+---
+
+# HRU — Digestor Inverland
+
+- **Cero Hardcoding:** sin API keys, rutas Firebase, modelos Gemini, umbrales RAG, IDs de org o textos de sistema quemados. Usar env, config y datos.
+- **Cero Regresiones:** el sistema avanza; probar que flujos ya operativos siguen igual. No sacrificar una función por habilitar otra.
+- **Universalidad Total:** escritura, contrato y plano usan el mismo pipeline de ingesta/RAG/UX (mismas reglas, misma experiencia). La arquitectura debe ser escalable y unificada.

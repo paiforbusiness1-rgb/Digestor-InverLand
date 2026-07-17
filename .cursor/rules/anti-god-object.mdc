@@ -1,0 +1,12 @@
+---
+description: Anti-God-Object — servicios modulares, sin archivos monstruo
+alwaysApply: true
+---
+
+# Arquitectura Anti-God-Object — Digestor Inverland
+
+Prohibido acumular lógica de negocio en un solo componente/archivo (>~1000 líneas).
+
+- **Delegación:** todo flujo nuevo (OCR, chunking, embeddings, sync Firebase, RAG chat) va en servicio/orquestador independiente e importado.
+- **SOLID:** routers (`server.ts`, handlers API) solo deciden a quién llamar; no procesan cadenas largas ni lógica de dominio en el cuerpo.
+- **Alerta APO:** si `DocumentDigester.tsx` u otro archivo monstruo debe crecer, alertar al usuario y pedir permiso para modularizar antes de inyectar más código.

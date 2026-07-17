@@ -1,0 +1,15 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Índice RAG local (SQLite) — Fase 1+
+data/
+
+# Secretos locales
+Groq API Key.txt
+*.key.txt

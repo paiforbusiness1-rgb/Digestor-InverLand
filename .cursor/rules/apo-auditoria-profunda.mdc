@@ -1,0 +1,14 @@
+---
+description: APO — Auditoría Profunda Obligatoria antes de modificar lógica existente
+alwaysApply: true
+---
+
+# APO (Auditoría Profunda Obligatoria) — Digestor Inverland
+
+Prohibidos hotfixes ciegos. Antes de CUALQUIER cambio a lógica existente:
+
+1. **Trazar ciclo de vida:** quién llama la función, parámetros, interceptores/legacy (`DocumentDigester`, `server.ts`, chat, historial, `/api/*`).
+2. **Zero Regressions:** el ajuste no debe romper carga PDF, análisis, chat, historial ni muestras.
+3. **Planning Mode:** presentar Plan de Implementación (diagnóstico + alcance + riesgos) y **esperar aprobación expresa** del usuario antes de escribir o modificar código.
+
+Excepción: solo cambios triviales de UI cosméticos sin tocar flujos (textos/estilos aislados) pueden proceder tras declarar el alcance en una frase.
