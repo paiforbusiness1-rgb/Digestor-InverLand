@@ -36,4 +36,5 @@ export interface ServerAppConfig extends PublicAppConfig {
   ollamaNumGpu: number;
   ollamaNumThread: number;
   minExtractedChars: number;
+  ragTopK: number;
 }

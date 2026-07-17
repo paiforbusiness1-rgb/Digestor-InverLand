@@ -9,6 +9,7 @@ import {
   compareDocumentsLocal,
 } from './src/services/documentAnalyzeService';
 import { generateChatReply } from './src/services/generationService';
+import { answerWithLocalRag } from './src/services/ragChatService';
 
 dotenv.config();
 
@@ -117,11 +118,60 @@ INSTRUCCIONES DE RESPUESTA:
       temperature: 0.2,
     });
 
-    return res.status(200).json({ reply });
+    return res.status(200).json({ reply, mode: 'in_context' });
   } catch (error: any) {
     console.error('Error en /api/chat:', error);
     return res.status(500).json({
       error: 'Error de procesamiento en chat',
+      message: error.message,
+    });
+  }
+});
+
+/** Fase 3 — RAG local (SQLite + embeddings Ollama CPU + Groq) */
+app.post('/api/rag/chat', async (req, res) => {
+  try {
+    const config = loadServerConfig();
+    const { sourceDocumentId, documentName, message, chatHistory } = req.body ?? {};
+
+    if (!sourceDocumentId || !message) {
+      return res.status(400).json({
+        error: 'Payload inválido',
+        message: 'Se requieren sourceDocumentId y message.',
+      });
+    }
+
+    const history = Array.isArray(chatHistory)
+      ? chatHistory.map((h: { role?: string; content?: string }) => ({
+          role: (h.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
+          content: String(h.content || ''),
+        }))
+      : [];
+
+    const result = await answerWithLocalRag(
+      {
+        sourceDocumentId: String(sourceDocumentId),
+        documentName: String(documentName || 'Expediente'),
+        message: String(message),
+        chatHistory: history,
+      },
+      config
+    );
+
+    if (result.mode === 'unavailable') {
+      return res.status(409).json({
+        error: 'Índice no disponible',
+        message:
+          'Este expediente aún no está indexado en local. Usa «Indexar para consulta móvil» o el chat estándar.',
+        mode: result.mode,
+      });
+    }
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Error en /api/rag/chat:', error);
+    return res.status(500).json({
+      error: 'Error de chat RAG',
       message: error.message,
     });
   }

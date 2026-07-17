@@ -47,6 +47,7 @@ import { RealEstateDocument, ChatMessage, DocumentAnalysis, AuditLogEntry, Porta
 import { SAMPLE_DOCUMENTS } from './DocumentSamples';
 import { generatePDFReport } from '../utils/pdfGenerator';
 import { INDEX_STATUS_LABELS, requestLocalIngest } from '../services/ingestClient';
+import { requestRagChat } from '../services/ragChatClient';
 import type { IndexStatus } from '@/shared/types/rag';
 
 function getDaysRemaining(dateString: string): { days: number; text: string; isOverdue: boolean } | null {
@@ -1022,28 +1023,59 @@ TERCERA. VIGENCIA. La duración del presente contrato será de 12 meses, comenza
     setIsThinking(true);
 
     try {
-      // Llamar al endpoint `/api/chat` en el backend Express para interactuar realmente con Gemini
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documentContent: activeDoc.content || JSON.stringify(activeDoc.analysis),
-          documentName: activeDoc.name,
-          chatHistory: updatedChats.slice(-6).map(m => ({ role: m.role, content: m.content })),
-          message: userMsgText
-        })
-      });
+      const historyPayload = updatedChats.slice(-6).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
 
-      if (!response.ok) {
-        throw new Error('Fallo de API');
+      const useRag = indexStatusByDocId[activeDoc.id] === 'indexed_local';
+      let replyText = '';
+
+      if (useRag) {
+        try {
+          const rag = await requestRagChat({
+            sourceDocumentId: activeDoc.id,
+            documentName: activeDoc.name,
+            message: userMsgText,
+            chatHistory: historyPayload,
+          });
+          replyText = rag.reply;
+        } catch {
+          // Cero regresiones: si RAG falla, cae a chat in-context
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              documentContent: activeDoc.content || JSON.stringify(activeDoc.analysis),
+              documentName: activeDoc.name,
+              chatHistory: historyPayload,
+              message: userMsgText,
+            }),
+          });
+          if (!response.ok) throw new Error('Fallo de API');
+          const responseData = await response.json();
+          replyText = responseData.reply;
+        }
+      } else {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentContent: activeDoc.content || JSON.stringify(activeDoc.analysis),
+            documentName: activeDoc.name,
+            chatHistory: historyPayload,
+            message: userMsgText,
+          }),
+        });
+        if (!response.ok) throw new Error('Fallo de API');
+        const responseData = await response.json();
+        replyText = responseData.reply;
       }
 
-      const responseData = await response.json();
-      
       const newAssistantMsg: ChatMessage = {
         id: `msg-ai-${Date.now()}`,
         role: 'assistant',
-        content: responseData.reply,
+        content: replyText,
         timestamp: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
       };
 
@@ -1056,7 +1088,7 @@ TERCERA. VIGENCIA. La duración del presente contrato será de 12 meses, comenza
       console.error(err);
       // Fallback si falla la llamada
       setTimeout(() => {
-        const dummyReply = `He recibido tu pregunta: "${userMsgText}". Como modelo local de respaldo, te confirmo que según los metadatos extraídos, este expediente inmobiliario registra una superficie de ${activeDoc.analysis?.metrics.surfaceArea || 'no especificada'} y las cláusulas principales están evaluadas con alertas activas en el panel izquierdo. Para respuestas en lenguaje natural avanzadas, activa el API Key de Gemini en tus secretos.`;
+        const dummyReply = `He recibido tu pregunta: "${userMsgText}". Como modelo local de respaldo, te confirmo que según los metadatos extraídos, este expediente inmobiliario registra una superficie de ${activeDoc.analysis?.metrics.surfaceArea || 'no especificada'} y las cláusulas principales están evaluadas con alertas activas en el panel izquierdo. Para respuestas avanzadas, indexa el documento o revisa la conexión con Groq/Ollama.`;
         
         const newAssistantMsg: ChatMessage = {
           id: `msg-ai-fallback-${Date.now()}`,

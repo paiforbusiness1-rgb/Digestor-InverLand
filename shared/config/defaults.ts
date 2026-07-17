@@ -6,7 +6,7 @@
 export const APP_CONFIG_DEFAULTS = {
   port: 3000,
   ingestMode: 'local' as const,
-  ragMode: 'off' as const,
+  ragMode: 'local' as const,
 
   /** ollama | gemini — embeddings del índice RAG */
   embeddingProvider: 'ollama' as const,
@@ -34,4 +34,7 @@ export const APP_CONFIG_DEFAULTS = {
 
   /** Umbral: por debajo se intenta OCR visual */
   minExtractedChars: 80,
+
+  /** RAG local: fragmentos a recuperar */
+  ragTopK: 5,
 } as const;

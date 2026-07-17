@@ -81,6 +81,7 @@ export function loadServerConfig(env: NodeJS.ProcessEnv = process.env): ServerAp
       env.MIN_EXTRACTED_CHARS,
       APP_CONFIG_DEFAULTS.minExtractedChars
     ),
+    ragTopK: parsePositiveInt(env.RAG_TOP_K, APP_CONFIG_DEFAULTS.ragTopK),
     sqlitePath: env.SQLITE_PATH?.trim() || APP_CONFIG_DEFAULTS.sqlitePath,
     firebaseProjectId: env.FIREBASE_PROJECT_ID?.trim() || undefined,
     firestoreDocumentsCollection:
