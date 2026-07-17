@@ -78,7 +78,10 @@ Asegúrate de:
 3. Extraer áreas/superficies (en m²), montos de transacción, monedas y plazos/vigencias en "metrics".
 4. Extraer fechas clave de firma, vencimiento o registro en "dates".
 5. Extraer las cláusulas más importantes y evaluar su nivel de riesgo legal ("low", "medium", "high") explicando por qué.
-6. Generar alertas preventivas en "alerts" con tipo "critical", "warning" o "info".`
+6. Generar alertas preventivas en "alerts" con tipo "critical", "warning" o "info".
+7. Generar un dictamen o resumen ejecutivo detallado y profesional de los riesgos legales y financieros identificados, junto con recomendaciones de mitigación clave para la inmobiliaria en "legalRiskSummary" en español.
+8. Extraer hitos, fechas límite, renovaciones, vigencias o plazos críticos de cumplimiento en "criticalDeadlines", asignando un título corto y claro ("title"), fecha estimada o exacta en formato YYYY-MM-DD ("date"), prioridad ('low', 'medium' o 'high') ("priority") y una descripción explicativa de las implicaciones o consecuencias en español ("description").
+9. Realizar un OCR / transcripción exhaustiva y fidedigna de todo el texto, anotaciones, dimensiones, leyendas o cláusulas del documento/plano original en español, preservando saltos de línea, y guardándolo en la clave "extractedText".`
     });
 
     const response = await ai.models.generateContent({
@@ -90,6 +93,7 @@ Asegúrate de:
           type: Type.OBJECT,
           properties: {
             summary: { type: Type.STRING, description: "Resumen ejecutivo corto del expediente en español." },
+            legalRiskSummary: { type: Type.STRING, description: "Resumen ejecutivo formal detallando los riesgos legales y financieros del contrato/expediente junto con sugerencias de mitigación en español." },
             entities: {
               type: Type.OBJECT,
               properties: {
@@ -117,6 +121,19 @@ Asegúrate de:
                 registrationDate: { type: Type.STRING, description: "Fecha de inscripción o registro oficial (YYYY-MM-DD)." }
               }
             },
+            criticalDeadlines: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING, description: "Título breve del hito o plazo crítico (ej. Pago de Renta, Renovación)." },
+                  date: { type: Type.STRING, description: "Fecha límite en formato YYYY-MM-DD o descripción de cuándo ocurre." },
+                  description: { type: Type.STRING, description: "Explicación detallada del plazo y consecuencias de incumplimiento." },
+                  priority: { type: Type.STRING, description: "Prioridad del hito: 'low', 'medium' o 'high'." }
+                },
+                required: ["title", "date", "description", "priority"]
+              }
+            },
             keyClauses: {
               type: Type.ARRAY,
               items: {
@@ -140,9 +157,10 @@ Asegúrate de:
                 },
                 required: ["type", "message"]
               }
-            }
+            },
+            extractedText: { type: Type.STRING, description: "Transcripción OCR completa del texto, cláusulas o anotaciones del plano/documento en español." }
           },
-          required: ["summary", "entities", "metrics", "dates", "keyClauses", "alerts"]
+          required: ["summary", "legalRiskSummary", "entities", "metrics", "dates", "keyClauses", "alerts", "criticalDeadlines", "extractedText"]
         }
       }
     });
@@ -162,6 +180,73 @@ Asegúrate de:
     console.error('Error en /api/analyze:', error);
     return res.status(500).json({
       error: 'Error de análisis en el servidor',
+      message: error.message
+    });
+  }
+});
+
+// 2.5. AI Side-by-Side Document Comparison
+app.post('/api/compare', async (req, res) => {
+  try {
+    const { docAName, docAContent, docBName, docBContent } = req.body;
+    const ai = getGeminiClient();
+
+    const comparisonPrompt = `Eres un auditor legal e inmobiliario experto de la empresa Inverland Desarrollos.
+Compara detalladamente los siguientes dos expedientes inmobiliarios / contratos lado a lado.
+Identifica inconsistencias, diferencias en montos, áreas de terreno/construcción, partes firmantes, fechas clave, penalizaciones, prórrogas o cualquier discrepancia que represente un riesgo legal o financiero.
+
+DOCUMENTO A:
+Nombre: ${docAName}
+Datos/Contenido: ${docAContent}
+
+DOCUMENTO B:
+Nombre: ${docBName}
+Datos/Contenido: ${docBContent}
+
+Analiza y estructura tu respuesta EXACTAMENTE de acuerdo al esquema JSON solicitado. Asegúrate de dar detalles precisos y explicaciones de riesgo legal rigurosas en español.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: [{ text: comparisonPrompt }],
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING, description: "Resumen comparativo general en español que sintetiza las principales discrepancias o hallazgos." },
+            differences: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  category: { type: Type.STRING, description: "Categoría de la diferencia: 'Partes', 'Métricas', 'Fechas', 'Cláusulas', 'Otros'." },
+                  severity: { type: Type.STRING, description: "Severidad de la discrepancia para el negocio: 'low', 'medium', 'high'." },
+                  field: { type: Type.STRING, description: "Nombre del aspecto o campo comparado (ej. Comprador, Superficie m², Fecha de firma, Cláusula de rescisión)." },
+                  docAValue: { type: Type.STRING, description: "Valor o descripción del aspecto en el Documento A." },
+                  docBValue: { type: Type.STRING, description: "Valor o descripción del aspecto en el Documento B." },
+                  description: { type: Type.STRING, description: "Explicación detallada de por qué difieren y el riesgo legal o financiero asociado." }
+                },
+                required: ["category", "severity", "field", "docAValue", "docBValue", "description"]
+              }
+            },
+            recommendations: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "Acciones recomendadas concretas para conciliar o mitigar los riesgos derivados de estas diferencias."
+            }
+          },
+          required: ["summary", "differences", "recommendations"]
+        }
+      }
+    });
+
+    const parsedComparison = JSON.parse(response.text || '{}');
+    return res.status(200).json(parsedComparison);
+
+  } catch (error: any) {
+    console.error('Error en /api/compare:', error);
+    return res.status(500).json({
+      error: 'Error de análisis comparativo en el servidor',
       message: error.message
     });
   }

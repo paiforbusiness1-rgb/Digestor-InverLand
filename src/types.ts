@@ -1,3 +1,14 @@
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string; // ISO or local date/time string
+  userEmail: string; // User who processed the document
+  action: string; // Action type (e.g. Carga y Análisis, Generación de Reporte)
+  documentId: string;
+  documentName: string;
+  documentCategory: string;
+  summary: string; // Short or full executive summary of the document/action
+}
+
 export interface RealEstateDocument {
   id: string;
   name: string;
@@ -6,13 +17,24 @@ export interface RealEstateDocument {
   size: string;
   uploadedAt: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+  uploadProgress?: number;
+  currentStepText?: string;
   content?: string; // Text content or Base64 representation
   mimeType?: string;
   analysis?: DocumentAnalysis;
 }
 
+export interface CriticalDeadline {
+  title: string;
+  date: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+}
+
 export interface DocumentAnalysis {
   summary: string;
+  legalRiskSummary?: string; // Resumen ejecutivo detallado de riesgos legales
+  criticalDeadlines?: CriticalDeadline[]; // Fechas y plazos críticos extraídos del documento
   entities: {
     buyerOrTenant?: string;
     sellerOrLandlord?: string;
@@ -43,6 +65,7 @@ export interface DocumentAnalysis {
   }>;
   ocrExtracted: boolean;
   ocrMethodUsed?: string;
+  extractedText?: string; // Transcripción o texto OCR completo
 }
 
 export interface ChatMessage {
@@ -63,3 +86,14 @@ export interface ArchitectureSection {
   codeLanguage: string;
   keyPoints: string[];
 }
+
+export interface PortalNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'loading';
+  timestamp: string;
+  isRead: boolean;
+  progress?: number;
+}
+
